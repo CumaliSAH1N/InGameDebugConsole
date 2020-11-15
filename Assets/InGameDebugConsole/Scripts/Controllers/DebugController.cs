@@ -7,7 +7,7 @@ public class DebugController : MonoBehaviour
 {
     public List<BaseCommand> commands = new List<BaseCommand>();
 
-    private string commandInput = default;
+    private string commandInput = string.Empty;
     private bool showDebugConsole = false;
     private bool showCommandHelp = false;
     private Vector2 lastScrollPosition = Vector2.zero;
