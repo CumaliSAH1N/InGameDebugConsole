@@ -8,14 +8,13 @@ using Object = UnityEngine.Object;
 public static class DebugHelper
 {
     #region Command Info
-
-    public static bool GetClassType(string className, out Type classType)
+    public static bool TryGetClassType(string className, out Type classType)
     {
         classType = Type.GetType(className);
         return classType != null;
     }
 
-    public static bool GetMethodInfo(Type classType, string info, int parameterCount, out MethodInfo infoData)
+    public static bool TryGetMethodInfo(Type classType, string info, int parameterCount, out MethodInfo infoData)
     {
         string methodName = info;
         if (info.Contains(" "))
@@ -32,7 +31,7 @@ public static class DebugHelper
         return infoData != null;
     }
 
-    public static bool GetClassObject(Type classType, ref object classObject)
+    public static bool TryGetClassObject(Type classType, ref object classObject)
     {
         if (classType.BaseType == typeof(MonoBehaviour))
         {

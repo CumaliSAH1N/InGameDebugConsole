@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66988e3ce0ffe4dfeacadfbd5d6b81b0, type: 3}
-  m_Name: New Simple Command 1
+  m_Name: ShowCommand
   m_EditorClassIdentifier: 
-  commandId: helpXX
-  commandDescription: sfhgjgkhljk
-  commandFormat: help <number>
-  actionName: DebugController.ToggleHelp
+  commandId: show
+  commandDescription: Trigger Show method
+  commandFormat: show
+  actionName: TestClass.Show

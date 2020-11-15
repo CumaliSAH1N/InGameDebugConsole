@@ -7,11 +7,11 @@ public class DebugController : MonoBehaviour
 {
     public List<BaseCommand> commands = new List<BaseCommand>();
 
-    public string commandInput = default;
-    public bool showDebugConsole = false;
-    public bool showCommandHelp = false;
+    private string commandInput = default;
+    private bool showDebugConsole = false;
+    private bool showCommandHelp = false;
     private Vector2 lastScrollPosition = Vector2.zero;
-    
+
     public void Update()
     {
         if (Input.GetKeyDown(KeyCode.Tab))
@@ -22,9 +22,9 @@ public class DebugController : MonoBehaviour
 
     #region Command Execution
 
-    private void ExecuteCommand(BaseCommand c, object[] parameters)
+    private void ExecuteCommand(BaseCommand command, object[] parameters)
     {
-        string[] parts = c.actionName.Split('.');
+        string[] parts = command.actionName.Split('.');
 
         if (parts.Length != 2)
         {
@@ -32,20 +32,20 @@ public class DebugController : MonoBehaviour
             return;
         }
 
-        if (!DebugHelper.GetClassType(parts[0], out Type classType))
+        if (!DebugHelper.TryGetClassType(parts[0], out Type classType))
         {
             Debug.LogError($"{parts[0]} class type not found!");
             return;
         }
 
         object magicClassObject = null;
-        if (!DebugHelper.GetClassObject(classType, ref magicClassObject))
+        if (!DebugHelper.TryGetClassObject(classType, ref magicClassObject))
         {
             Debug.LogError($"Class not found (with default constructor not found)! Class type:{classType}");
             return;
         }
 
-        if (!DebugHelper.GetMethodInfo(classType, parts[1], parameters.Length, out MethodInfo infoData))
+        if (!DebugHelper.TryGetMethodInfo(classType, parts[1], parameters.Length, out MethodInfo infoData))
         {
             Debug.LogError($"Method not found! Input:{commandInput}");
             return;
@@ -61,19 +61,20 @@ public class DebugController : MonoBehaviour
         infoData.Invoke(magicClassObject, parameters);
     }
 
-    private void Execute()
+    private void PrepareForExecution()
     {
-        if (string.IsNullOrEmpty(commandInput))
-        {
-            return;
-        }
-        
         string commandId = commandInput;
 
-        List<object> parameters = new List<object>();
-        if (commandInput.Contains(" "))
+        if (string.IsNullOrEmpty(commandId))
         {
-            string[] parts = commandInput.Split(' ');
+            Debug.LogError("Invalid input");
+            return;
+        }
+
+        List<object> parameters = new List<object>();
+        if (commandId.Contains(" "))
+        {
+            string[] parts = commandId.Split(' ');
 
             commandId = parts[0];
 
@@ -88,6 +89,7 @@ public class DebugController : MonoBehaviour
 
         if (command == null)
         {
+            Debug.LogError($"Command with ID:{commandId} not found!");
             return;
         }
 
@@ -95,7 +97,7 @@ public class DebugController : MonoBehaviour
     }
 
     #endregion Command Execution
-    
+
     #region Visual
 
     private void OnGUI()
@@ -107,7 +109,7 @@ public class DebugController : MonoBehaviour
 
         if (Event.current.Equals(Event.KeyboardEvent("return")))
         {
-            Execute();
+            PrepareForExecution();
         }
 
         DrawConsole();
@@ -129,6 +131,13 @@ public class DebugController : MonoBehaviour
             new Rect(10.0f, y + 5.0f,
                 Screen.width - 20.0f, 20.0f),
             commandInput);
+
+        GUI.backgroundColor = new Color(0.0f, 0.0f, 0.0f, 0.5f);
+        y += 35.0f;
+        if (commandInput.Length > 0)
+        {
+            DrawSuggestions(y);
+        }
     }
 
     private void DrawHelp(ref float y)
@@ -151,10 +160,10 @@ public class DebugController : MonoBehaviour
         {
             BaseCommand command = commands[i];
 
-            string info = $"{command.commandFormat} - {command.commandDescription}";
+            string info = command.GetInfo();
             Rect infoRect = new Rect(5.0f, 20.0f * i,
                 viewPort.width - 100.0f, 20.0f);
-          
+
             GUI.Label(infoRect, info);
         }
 
@@ -163,14 +172,73 @@ public class DebugController : MonoBehaviour
         y += 125.0f;
     }
 
+    private void DrawSuggestions(float y)
+    {
+        List<BaseCommand> suggestions = GetRelativeCommands();
+        int count = suggestions.Count;
+        if (count <= 0)
+        {
+            return;
+        }
+
+        GUI.Box(new Rect(0.0f, y, Screen.width, 125.0f), "");
+        Rect viewPort = new Rect(0.0f, 0.0f, Screen.width - 30.0f, 20.0f * count);
+
+        lastScrollPosition =
+            GUI.BeginScrollView(
+                new Rect(0.0f, y + 5.0f, Screen.width, 90.0f),
+                lastScrollPosition, viewPort);
+        GUIStyle style = GUI.skin.button;
+        style.alignment = TextAnchor.MiddleLeft;
+        style.margin.left = 15;
+
+        GUI.backgroundColor = new Color(0.0f, 0.0f, 0.0f, 0.0f);
+        for (int i = 0; i < count; i++)
+        {
+            BaseCommand command = suggestions[i];
+            string info = command.GetInfo();
+            Rect infoRect = new Rect(5.0f, 20.0f * i,
+                viewPort.width - 100.0f, 20.0f);
+
+            if (GUI.Button(infoRect, info, style))
+            {
+                commandInput = command.commandFormat;
+            }
+        }
+
+        GUI.EndScrollView();
+    }
+
     #endregion Visual
-    
-    #region Default
+
+    #region Default Commands
 
     public void ToggleHelp()
     {
         showCommandHelp = !showCommandHelp;
     }
 
-    #endregion Default
+    #endregion Default Commands
+
+    #region Suggestion
+
+    private List<BaseCommand> GetRelativeCommands()
+    {
+        List<BaseCommand> relativeCommands = new List<BaseCommand>();
+
+        int count = commands.Count;
+        for (int i = 0; i < count; i++)
+        {
+            if (!commands[i].commandId.Contains(commandInput))
+            {
+                continue;
+            }
+
+            relativeCommands.Add(commands[i]);
+        }
+
+        return relativeCommands;
+    }
+
+    #endregion Suggestion
 }

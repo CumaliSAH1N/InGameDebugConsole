@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66988e3ce0ffe4dfeacadfbd5d6b81b0, type: 3}
-  m_Name: New Simple Command
+  m_Name: SetValueCommand
   m_EditorClassIdentifier: 
-  commandId: helpX
-  commandDescription: info
-  commandFormat: help
-  actionName: DebugController.ToggleHelp
+  commandId: set_value
+  commandDescription: Trigger Set Value
+  commandFormat: set_value <number>
+  actionName: TestClass.SetValue
